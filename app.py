@@ -92,11 +92,7 @@ with st.sidebar:
     st.markdown("## IPL Analyzer")
     st.markdown("---")
     page = st.radio("Navigate", ["Live Scores", "Dashboard", "Team Analysis", "Score Predictor", "ML Insights"])
-    st.markdown("---")
-    st.markdown("**Dataset**")
-    st.markdown(f"- {len(df)} matches")
-    st.markdown(f"- {df['season'].min()} - {df['season'].max()}")
-    st.markdown(f"- {df['team1'].nunique()} teams")
+
 
 # ══════════════════════════════════════════════════════════════
 # PAGE 1: Dashboard
