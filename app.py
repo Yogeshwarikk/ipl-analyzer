@@ -91,7 +91,7 @@ venues = sorted(df['venue'].unique())
 with st.sidebar:
     st.markdown("## IPL Analyzer")
     st.markdown("---")
-    page = st.radio("Navigate", ["Dashboard", "Team Analysis", "Score Predictor", "ML Insights"])
+    page = st.radio("Navigate", ["Live Scores", "Dashboard", "Team Analysis", "Score Predictor", "ML Insights"])
     st.markdown("---")
     st.markdown("**Dataset**")
     st.markdown(f"- {len(df)} matches")
@@ -101,7 +101,57 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════
 # PAGE 1: Dashboard
 # ══════════════════════════════════════════════════════════════
-if page == "Dashboard":
+# Live Scores Page
+if page == "Live Scores":
+    st.title("Live Cricket Scores")
+    st.markdown("Real-time cricket match scores")
+    st.markdown("---")
+
+    import requests
+
+    RAPIDAPI_KEY = "d66f3a7c9fmsh81d1ad00e4ae47ap190e24jsn27e5237bcaa9"
+
+    if st.button("Refresh Scores"):
+        st.rerun()
+
+    try:
+        url = "https://free-cricket-live-score1.p.rapidapi.com/"
+        headers = {
+            "x-rapidapi-host": "free-cricket-live-score1.p.rapidapi.com",
+            "x-rapidapi-key": RAPIDAPI_KEY
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+
+        if isinstance(data, list) and len(data) > 0:
+            for match in data:
+                st.markdown(f"### {match.get('team1', 'Team 1')} vs {match.get('team2', 'Team 2')}")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Status", match.get('status', 'N/A'))
+                col2.metric("Score", match.get('score', 'N/A'))
+                col3.metric("Venue", match.get('venue', 'N/A'))
+                st.markdown("---")
+        elif isinstance(data, dict):
+            matches = data.get('matches', data.get('data', []))
+            if matches:
+                for match in matches:
+                    st.markdown(f"### {match.get('team1', 'Team 1')} vs {match.get('team2', 'Team 2')}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Status", match.get('status', 'N/A'))
+                    col2.metric("Score", match.get('score', 'N/A'))
+                    col3.metric("Venue", match.get('venue', 'N/A'))
+                    st.markdown("---")
+            else:
+                st.info("No live matches at the moment. Check back during match hours!")
+                st.json(data)
+        else:
+            st.info("No live matches at the moment. Check back during match hours!")
+
+    except Exception as e:
+        st.error(f"Could not fetch live scores: {e}")
+        st.info("No live matches at the moment. Check back during match hours!")
+
+elif page == "Dashboard":
     st.title("IPL Match Analysis Dashboard")
     st.markdown("Complete analysis of IPL matches from 2015 to 2023")
     st.markdown("---")
