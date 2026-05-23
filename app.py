@@ -5,7 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy import stats
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_absolute_error, r2_score, accuracy_score
@@ -16,7 +15,7 @@ warnings.filterwarnings('ignore')
 # ── Page Config ────────────────────────────────────────────────
 st.set_page_config(
     page_title="IPL Score Analyzer",
-    page_icon="🏏",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -90,34 +89,32 @@ venues = sorted(df['venue'].unique())
 
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🏏 IPL Analyzer")
+    st.markdown("## IPL Analyzer")
     st.markdown("---")
-    page = st.radio("Navigate", ["📊 Dashboard", "🔍 Team Analysis", "🤖 Score Predictor", "📈 ML Insights"])
+    page = st.radio("Navigate", ["Dashboard", "Team Analysis", "Score Predictor", "ML Insights"])
     st.markdown("---")
     st.markdown("**Dataset**")
     st.markdown(f"- {len(df)} matches")
-    st.markdown(f"- {df['season'].min()} – {df['season'].max()}")
+    st.markdown(f"- {df['season'].min()} - {df['season'].max()}")
     st.markdown(f"- {df['team1'].nunique()} teams")
 
 # ══════════════════════════════════════════════════════════════
 # PAGE 1: Dashboard
 # ══════════════════════════════════════════════════════════════
-if page == "📊 Dashboard":
-    st.title("🏏 IPL Match Analysis Dashboard")
+if page == "Dashboard":
+    st.title("IPL Match Analysis Dashboard")
     st.markdown("Complete analysis of IPL matches from 2015 to 2023")
     st.markdown("---")
 
-    # KPI row
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Matches", len(df))
     col2.metric("Avg 1st Innings", f"{df['first_innings_score'].mean():.0f} runs")
     col3.metric("Avg 2nd Innings", f"{df['second_innings_score'].mean():.0f} runs")
     toss_win_pct = (df['toss_winner'] == df['winner']).mean() * 100
-    col4.metric("Toss → Win Rate", f"{toss_win_pct:.1f}%")
+    col4.metric("Toss Win Rate", f"{toss_win_pct:.1f}%")
 
     st.markdown("---")
 
-    # Row 1
     col_a, col_b = st.columns(2)
 
     with col_a:
@@ -125,13 +122,12 @@ if page == "📊 Dashboard":
         wins = df['winner'].value_counts().reset_index()
         wins.columns = ['Team', 'Wins']
         fig = px.bar(wins, x='Team', y='Wins', color='Team',
-                     color_discrete_sequence=COLORS,
-                     text='Wins')
+                     color_discrete_sequence=COLORS, text='Wins')
         fig.update_traces(textposition='outside')
         fig.update_layout(showlegend=False, xaxis_tickangle=-30,
                           plot_bgcolor='white', paper_bgcolor='white',
                           margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col_b:
         st.markdown('<div class="section-title">Score Distribution</div>', unsafe_allow_html=True)
@@ -142,9 +138,8 @@ if page == "📊 Dashboard":
                                    marker_color='#457B9D', opacity=0.75, nbinsx=25))
         fig.update_layout(barmode='overlay', plot_bgcolor='white', paper_bgcolor='white',
                           legend=dict(x=0.7, y=0.95), margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
-    # Row 2
     col_c, col_d = st.columns(2)
 
     with col_c:
@@ -153,16 +148,14 @@ if page == "📊 Dashboard":
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=season_avg['season'], y=season_avg['first_innings_score'],
                                  mode='lines+markers', name='1st Innings',
-                                 line=dict(color='#E63946', width=2.5),
-                                 marker=dict(size=8)))
+                                 line=dict(color='#E63946', width=2.5), marker=dict(size=8)))
         fig.add_trace(go.Scatter(x=season_avg['season'], y=season_avg['second_innings_score'],
                                  mode='lines+markers', name='2nd Innings',
-                                 line=dict(color='#457B9D', width=2.5),
-                                 marker=dict(size=8)))
+                                 line=dict(color='#457B9D', width=2.5), marker=dict(size=8)))
         fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
                           xaxis_title='Season', yaxis_title='Avg Score',
                           margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col_d:
         st.markdown('<div class="section-title">Toss Decision Impact</div>', unsafe_allow_html=True)
@@ -173,24 +166,22 @@ if page == "📊 Dashboard":
                      color_discrete_sequence=['#2A9D8F', '#E9C46A'],
                      hole=0.35)
         fig.update_layout(margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
-    # Heatmap
-    st.markdown('<div class="section-title">Venue × Season: Avg First Innings Score</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Venue x Season: Avg First Innings Score</div>', unsafe_allow_html=True)
     top_venues = df['venue'].value_counts().head(6).index
     heat_data = df[df['venue'].isin(top_venues)].groupby(
         ['venue', 'season'])['first_innings_score'].mean().unstack(fill_value=0)
     heat_data.index = [v.replace(' Stadium', '').replace(' Cricket Association', '') for v in heat_data.index]
-    fig = px.imshow(heat_data, color_continuous_scale='YlOrRd', aspect='auto',
-                    text_auto='.0f')
+    fig = px.imshow(heat_data, color_continuous_scale='YlOrRd', aspect='auto', text_auto='.0f')
     fig.update_layout(margin=dict(t=20, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 # PAGE 2: Team Analysis
 # ══════════════════════════════════════════════════════════════
-elif page == "🔍 Team Analysis":
-    st.title("🔍 Team Deep Dive")
+elif page == "Team Analysis":
+    st.title("Team Deep Dive")
     selected_team = st.selectbox("Select a team to analyze", teams)
 
     team_df = df[(df['team1'] == selected_team) | (df['team2'] == selected_team)]
@@ -212,7 +203,7 @@ elif page == "🔍 Team Analysis":
         fig = px.bar(wins_by_season, x='season', y='Wins', color_discrete_sequence=['#E63946'])
         fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
                           xaxis_title='Season', margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col_b:
         st.markdown('<div class="section-title">Score Distribution when Batting First</div>', unsafe_allow_html=True)
@@ -224,7 +215,7 @@ elif page == "🔍 Team Analysis":
                           annotation_text=f"Mean: {team_batting['first_innings_score'].mean():.0f}")
             fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
                               margin=dict(t=20, b=10))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     st.markdown('<div class="section-title">Win/Loss vs Each Opponent</div>', unsafe_allow_html=True)
     opponents = [t for t in teams if t != selected_team]
@@ -241,13 +232,13 @@ elif page == "🔍 Team Analysis":
     fig.add_trace(go.Bar(name='Losses', x=h2h_df['Opponent'], y=h2h_df['Losses'], marker_color='#E63946'))
     fig.update_layout(barmode='group', plot_bgcolor='white', paper_bgcolor='white',
                       margin=dict(t=20, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 # PAGE 3: Score Predictor
 # ══════════════════════════════════════════════════════════════
-elif page == "🤖 Score Predictor":
-    st.title("🤖 Match Score & Winner Predictor")
+elif page == "Score Predictor":
+    st.title("Match Score and Winner Predictor")
     st.markdown("Select match details below to predict the first innings score and likely winner.")
     st.markdown("---")
 
@@ -260,18 +251,11 @@ elif page == "🤖 Score Predictor":
         season = st.slider("Season", 2015, 2023, 2023)
         toss_dec = st.radio("Toss Decision", ['bat', 'field'], horizontal=True)
 
-    if st.button("🔮 Predict Now", use_container_width=True):
+    if st.button("Predict Now", use_container_width=True):
         le2 = LabelEncoder()
         df_enc = df.copy()
         for col in ['batting_first_team', 'bowling_first_team', 'venue', 'toss_decision']:
             le2.fit(df_enc[col])
-            val = batting_team if col == 'batting_first_team' else \
-                  bowling_team if col == 'bowling_first_team' else \
-                  venue if col == 'venue' else toss_dec
-            try:
-                encoded = le2.transform([val])[0]
-            except:
-                encoded = 0
             df_enc[col + '_enc'] = le2.transform(df_enc[col])
 
         row = pd.DataFrame([{
@@ -286,14 +270,20 @@ elif page == "🤖 Score Predictor":
 
         row2 = row.copy()
         row2['first_innings_score'] = predicted_score
+
+        # Safe win probability extraction
         win_prob = clf_model.predict_proba(row2)[0]
-        batting_win_pct = win_prob[1] * 100
-        bowling_win_pct = win_prob[0] * 100
+        classes = list(clf_model.classes_)
+        if 1 in classes:
+            batting_win_pct = win_prob[classes.index(1)] * 100
+        else:
+            batting_win_pct = 0.0
+        bowling_win_pct = 100 - batting_win_pct
 
         st.markdown("---")
         st.markdown("### Prediction Results")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Predicted Score", f"{predicted_score} runs", f"±{rf_mae:.0f} runs")
+        c1.metric("Predicted Score", f"{predicted_score} runs", f"+-{rf_mae:.0f} runs")
         c2.metric(f"{batting_team} Win %", f"{batting_win_pct:.0f}%")
         c3.metric(f"{bowling_team} Win %", f"{bowling_win_pct:.0f}%")
 
@@ -310,9 +300,8 @@ elif page == "🤖 Score Predictor":
             yaxis=dict(range=[0, 110], title='Win %'),
             showlegend=False, margin=dict(t=40, b=10)
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
-        # Historical context
         hist = df[df['batting_first_team'] == batting_team]['first_innings_score']
         st.markdown(f"**Historical context for {batting_team} batting first:**")
         st.markdown(f"Average: **{hist.mean():.0f}** | Best: **{hist.max()}** | Worst: **{hist.min()}** runs")
@@ -320,13 +309,13 @@ elif page == "🤖 Score Predictor":
 # ══════════════════════════════════════════════════════════════
 # PAGE 4: ML Insights
 # ══════════════════════════════════════════════════════════════
-elif page == "📈 ML Insights":
-    st.title("📈 ML Model Insights")
+elif page == "ML Insights":
+    st.title("ML Model Insights")
     st.markdown("---")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Score Predictor MAE", f"±{rf_mae:.1f} runs")
-    col2.metric("Score Predictor R²", f"{rf_r2:.3f}")
+    col1.metric("Score Predictor MAE", f"+-{rf_mae:.1f} runs")
+    col2.metric("Score Predictor R2", f"{rf_r2:.3f}")
     col3.metric("Win Predictor Accuracy", f"{clf_acc*100:.1f}%")
 
     st.markdown("---")
@@ -341,10 +330,10 @@ elif page == "📈 ML Insights":
                      color='Importance', color_continuous_scale='Blues')
         fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
                           showlegend=False, margin=dict(t=20, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col_b:
-        st.markdown('<div class="section-title">ANOVA Test — Team Score Differences</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">ANOVA Test - Team Score Differences</div>', unsafe_allow_html=True)
         team_groups = [df[df['batting_first_team'] == t]['first_innings_score'].values for t in teams]
         f_stat, p_value = stats.f_oneway(*team_groups)
         corr_r, corr_p = stats.pearsonr(df['first_innings_score'], df['second_innings_score'])
@@ -354,7 +343,7 @@ elif page == "📈 ML Insights":
 |---|---|
 | ANOVA F-statistic | {f_stat:.4f} |
 | ANOVA p-value | {p_value:.4f} |
-| Result | {'✅ Significant difference' if p_value < 0.05 else '❌ No significant difference'} |
+| Result | {'Significant difference' if p_value < 0.05 else 'No significant difference'} |
 | Pearson r (1st vs 2nd) | {corr_r:.4f} |
 | Pearson p-value | {corr_p:.4f} |
         """)
@@ -367,4 +356,4 @@ elif page == "📈 ML Insights":
     fig = px.imshow(corr_matrix, color_continuous_scale='RdBu', zmin=-1, zmax=1,
                     text_auto='.2f', aspect='auto')
     fig.update_layout(margin=dict(t=20, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
