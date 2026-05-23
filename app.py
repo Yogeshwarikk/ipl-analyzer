@@ -124,23 +124,41 @@ if page == "Live Scores":
     async function fetchScores() {{
         document.getElementById('scores-output').innerHTML = '<p style="color:#6c757d;">Fetching scores...</p>';
         try {{
-            const response = await fetch('https://cricket-live-score4.p.rapidapi.com/matches', {{
+            // Step 1: Get current series to find IPL series_id
+            const seriesResp = await fetch('https://cricket-live-scores3.p.rapidapi.com/series', {{
                 method: 'GET',
                 headers: {{
-                    'x-rapidapi-host': 'cricket-live-score4.p.rapidapi.com',
+                    'x-rapidapi-host': 'cricket-live-scores3.p.rapidapi.com',
                     'x-rapidapi-key': '{RAPIDAPI_KEY}'
                 }}
             }});
-            const data = await response.json();
-            console.log('API Response:', data);
+            const seriesData = await seriesResp.json();
+            console.log('Series Response:', seriesData);
+
+            // Step 2: Get all matches
+            const matchResp = await fetch('https://cricket-live-scores3.p.rapidapi.com/matches', {{
+                method: 'GET',
+                headers: {{
+                    'x-rapidapi-host': 'cricket-live-scores3.p.rapidapi.com',
+                    'x-rapidapi-key': '{RAPIDAPI_KEY}'
+                }}
+            }});
+            const data = await matchResp.json();
+            console.log('Match Response:', data);
 
             let matches = [];
             if (Array.isArray(data)) matches = data;
+            else if (data.data && Array.isArray(data.data)) matches = data.data;
+            else if (data.data && data.data.current) matches = data.data.current;
             else if (data.matches) matches = data.matches;
-            else if (data.data) matches = data.data;
             else if (data.results) matches = data.results;
 
-            matches = matches.filter(m => m && typeof m === 'object' && !m.message);
+            // Filter only live matches
+            matches = matches.filter(m => {{
+                if (!m || typeof m !== 'object') return false;
+                const status = (m.status || m.matchstatus || m.match_status || '').toLowerCase();
+                return status.includes('live') || status.includes('progress') || status.includes('innings');
+            }});
 
             if (matches.length === 0) {{
                 document.getElementById('scores-output').innerHTML = `
