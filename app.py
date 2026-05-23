@@ -160,7 +160,7 @@ if page == "Live Scores":
             <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
                 <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
                 <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
-                <p style='color:#6c757d; font-size:14px;'>IPL 2025 matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+                <p style='color:#6c757d; font-size:14px;'>IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -169,7 +169,7 @@ if page == "Live Scores":
         <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
             <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
             <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
-            <p style='color:#6c757d; font-size:14px;'>IPL 2025 matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+            <p style='color:#6c757d; font-size:14px;'>IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
         </div>
         """, unsafe_allow_html=True)
 
