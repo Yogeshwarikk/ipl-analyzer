@@ -124,41 +124,42 @@ if page == "Live Scores":
     async function fetchScores() {{
         document.getElementById('scores-output').innerHTML = '<p style="color:#6c757d;">Fetching scores...</p>';
         try {{
-            // Step 1: Get current series to find IPL series_id
-            const seriesResp = await fetch('https://cricket-live-scores3.p.rapidapi.com/series', {{
+            const response = await fetch('https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live', {{
                 method: 'GET',
                 headers: {{
-                    'x-rapidapi-host': 'cricket-live-scores3.p.rapidapi.com',
+                    'x-rapidapi-host': 'cricbuzz-cricket.p.rapidapi.com',
                     'x-rapidapi-key': '{RAPIDAPI_KEY}'
                 }}
             }});
-            const seriesData = await seriesResp.json();
-            console.log('Series Response:', seriesData);
+            const data = await response.json();
+            console.log('Cricbuzz Response:', data);
 
-            // Step 2: Get all matches
-            const matchResp = await fetch('https://cricket-live-scores3.p.rapidapi.com/matches', {{
-                method: 'GET',
-                headers: {{
-                    'x-rapidapi-host': 'cricket-live-scores3.p.rapidapi.com',
-                    'x-rapidapi-key': '{RAPIDAPI_KEY}'
-                }}
-            }});
-            const data = await matchResp.json();
-            console.log('Match Response:', data);
-
+            // Cricbuzz returns typeMatches array
             let matches = [];
-            if (Array.isArray(data)) matches = data;
-            else if (data.data && Array.isArray(data.data)) matches = data.data;
-            else if (data.data && data.data.current) matches = data.data.current;
-            else if (data.matches) matches = data.matches;
-            else if (data.results) matches = data.results;
-
-            // Filter only live matches
-            matches = matches.filter(m => {{
-                if (!m || typeof m !== 'object') return false;
-                const status = (m.status || m.matchstatus || m.match_status || '').toLowerCase();
-                return status.includes('live') || status.includes('progress') || status.includes('innings');
-            }});
+            if (data.typeMatches) {{
+                data.typeMatches.forEach(type => {{
+                    if (type.seriesMatches) {{
+                        type.seriesMatches.forEach(series => {{
+                            if (series.seriesAdWrapper && series.seriesAdWrapper.matches) {{
+                                series.seriesAdWrapper.matches.forEach(m => {{
+                                    if (m.matchInfo) matches.push({{
+                                        team1: m.matchInfo.team1 ? m.matchInfo.team1.teamName : 'Team 1',
+                                        team2: m.matchInfo.team2 ? m.matchInfo.team2.teamName : 'Team 2',
+                                        status: m.matchInfo.status || 'Live',
+                                        score: m.matchScore ? 
+                                            (m.matchScore.team1Score ? 
+                                                (m.matchScore.team1Score.inngs1 ? 
+                                                    m.matchScore.team1Score.inngs1.runs + '/' + m.matchScore.team1Score.inngs1.wickets : 'Yet to bat')
+                                                : 'Yet to bat') : 'Live',
+                                        venue: m.matchInfo.venueInfo ? m.matchInfo.venueInfo.ground : '',
+                                        series: m.matchInfo.seriesName || ''
+                                    }});
+                                }});
+                            }}
+                        }});
+                    }}
+                }});
+            }}
 
             if (matches.length === 0) {{
                 document.getElementById('scores-output').innerHTML = `
