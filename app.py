@@ -115,41 +115,67 @@ if page == "Live Scores":
         st.rerun()
 
     try:
-        url = "https://free-cricket-live-score1.p.rapidapi.com/"
+        endpoints = [
+            "https://free-cricket-live-score1.p.rapidapi.com/matches",
+            "https://free-cricket-live-score1.p.rapidapi.com/live",
+            "https://free-cricket-live-score1.p.rapidapi.com/currentMatches",
+            "https://free-cricket-live-score1.p.rapidapi.com/score",
+        ]
         headers = {
             "x-rapidapi-host": "free-cricket-live-score1.p.rapidapi.com",
             "x-rapidapi-key": RAPIDAPI_KEY
         }
-        response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
 
-        if isinstance(data, list) and len(data) > 0:
-            for match in data:
-                st.markdown(f"### {match.get('team1', 'Team 1')} vs {match.get('team2', 'Team 2')}")
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Status", match.get('status', 'N/A'))
-                col2.metric("Score", match.get('score', 'N/A'))
-                col3.metric("Venue", match.get('venue', 'N/A'))
-                st.markdown("---")
+        data = None
+        for endpoint in endpoints:
+            try:
+                response = requests.get(endpoint, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    break
+            except:
+                continue
+
+        matches = []
+        if isinstance(data, list):
+            matches = data
         elif isinstance(data, dict):
-            matches = data.get('matches', data.get('data', []))
-            if matches:
-                for match in matches:
-                    st.markdown(f"### {match.get('team1', 'Team 1')} vs {match.get('team2', 'Team 2')}")
+            matches = data.get('matches', data.get('data', data.get('results', [])))
+
+        # Filter only valid matches
+        matches = [m for m in matches if isinstance(m, dict) and not m.get('message')]
+
+        if matches:
+            for match in matches:
+                with st.container():
+                    team1 = match.get('team1', match.get('t1', 'Team 1'))
+                    team2 = match.get('team2', match.get('t2', 'Team 2'))
+                    score = match.get('score', match.get('livescore', match.get('t1s', 'N/A')))
+                    status = match.get('status', match.get('matchstatus', 'Live'))
+                    venue = match.get('venue', match.get('ground', 'N/A'))
+                    st.markdown(f"### {team1} vs {team2}")
                     col1, col2, col3 = st.columns(3)
-                    col1.metric("Status", match.get('status', 'N/A'))
-                    col2.metric("Score", match.get('score', 'N/A'))
-                    col3.metric("Venue", match.get('venue', 'N/A'))
+                    col1.metric("Status", status)
+                    col2.metric("Score", score)
+                    col3.metric("Venue", venue)
                     st.markdown("---")
-            else:
-                st.info("No live matches at the moment. Check back during match hours!")
-                st.json(data)
         else:
-            st.info("No live matches at the moment. Check back during match hours!")
+            st.markdown("""
+            <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
+                <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
+                <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
+                <p style='color:#6c757d; font-size:14px;'>IPL 2025 matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     except Exception as e:
-        st.error(f"Could not fetch live scores: {e}")
-        st.info("No live matches at the moment. Check back during match hours!")
+        st.markdown("""
+        <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
+            <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
+            <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
+            <p style='color:#6c757d; font-size:14px;'>IPL 2025 matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 elif page == "Dashboard":
     st.title("IPL Match Analysis Dashboard")
