@@ -100,78 +100,109 @@ with st.sidebar:
 # Live Scores Page
 if page == "Live Scores":
     st.title("Live Cricket Scores")
-    st.markdown("Real-time cricket match scores")
+    st.markdown("Real-time cricket match scores fetched directly in your browser.")
     st.markdown("---")
 
-    import requests
+    import streamlit.components.v1 as components
 
     RAPIDAPI_KEY = "d66f3a7c9fmsh81d1ad00e4ae47ap190e24jsn27e5237bcaa9"
 
-    if st.button("Refresh Scores"):
-        st.rerun()
-
-    try:
-        endpoints = [
-            "https://free-cricket-live-score1.p.rapidapi.com/matches",
-            "https://free-cricket-live-score1.p.rapidapi.com/live",
-            "https://free-cricket-live-score1.p.rapidapi.com/currentMatches",
-            "https://free-cricket-live-score1.p.rapidapi.com/score",
-        ]
-        headers = {
-            "x-rapidapi-host": "free-cricket-live-score1.p.rapidapi.com",
-            "x-rapidapi-key": RAPIDAPI_KEY
-        }
-
-        data = None
-        for endpoint in endpoints:
-            try:
-                response = requests.get(endpoint, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    break
-            except:
-                continue
-
-        matches = []
-        if isinstance(data, list):
-            matches = data
-        elif isinstance(data, dict):
-            matches = data.get('matches', data.get('data', data.get('results', [])))
-
-        # Filter only valid matches
-        matches = [m for m in matches if isinstance(m, dict) and not m.get('message')]
-
-        if matches:
-            for match in matches:
-                with st.container():
-                    team1 = match.get('team1', match.get('t1', 'Team 1'))
-                    team2 = match.get('team2', match.get('t2', 'Team 2'))
-                    score = match.get('score', match.get('livescore', match.get('t1s', 'N/A')))
-                    status = match.get('status', match.get('matchstatus', 'Live'))
-                    venue = match.get('venue', match.get('ground', 'N/A'))
-                    st.markdown(f"### {team1} vs {team2}")
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Status", status)
-                    col2.metric("Score", score)
-                    col3.metric("Venue", venue)
-                    st.markdown("---")
-        else:
-            st.markdown("""
-            <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
-                <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
-                <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
-                <p style='color:#6c757d; font-size:14px;'>IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    except Exception as e:
-        st.markdown("""
-        <div style='text-align:center; padding:60px; background:#f8f9fa; border-radius:12px; margin-top:20px;'>
-            <h2 style='color:#457B9D;'>No Live Matches Right Now</h2>
-            <p style='color:#6c757d; font-size:16px;'>Live scores will appear here when a match is in progress.</p>
-            <p style='color:#6c757d; font-size:14px;'>IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+    live_html = f"""
+    <div id="live-container" style="font-family: sans-serif;">
+        <button onclick="fetchScores()" style="
+            background:#457B9D; color:white; border:none;
+            padding:10px 24px; border-radius:8px; font-size:15px;
+            cursor:pointer; margin-bottom:20px;">
+            Refresh Live Scores
+        </button>
+        <div id="scores-output">
+            <p style="color:#6c757d;">Loading live scores...</p>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+
+    <script>
+    async function fetchScores() {{
+        document.getElementById('scores-output').innerHTML = '<p style="color:#6c757d;">Fetching scores...</p>';
+        try {{
+            const response = await fetch('https://cricket-live-score4.p.rapidapi.com/matches', {{
+                method: 'GET',
+                headers: {{
+                    'x-rapidapi-host': 'cricket-live-score4.p.rapidapi.com',
+                    'x-rapidapi-key': '{RAPIDAPI_KEY}'
+                }}
+            }});
+            const data = await response.json();
+            console.log('API Response:', data);
+
+            let matches = [];
+            if (Array.isArray(data)) matches = data;
+            else if (data.matches) matches = data.matches;
+            else if (data.data) matches = data.data;
+            else if (data.results) matches = data.results;
+
+            matches = matches.filter(m => m && typeof m === 'object' && !m.message);
+
+            if (matches.length === 0) {{
+                document.getElementById('scores-output').innerHTML = `
+                    <div style="text-align:center; padding:60px; background:#f8f9fa; border-radius:12px;">
+                        <h2 style="color:#457B9D;">No Live Matches Right Now</h2>
+                        <p style="color:#6c757d; font-size:16px;">Live scores will appear here when a match is in progress.</p>
+                        <p style="color:#6c757d; font-size:14px;">IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+                    </div>`;
+                return;
+            }}
+
+            let html = '';
+            matches.forEach(match => {{
+                const team1 = match.team1 || match.t1 || match.teamA || 'Team 1';
+                const team2 = match.team2 || match.t2 || match.teamB || 'Team 2';
+                const score = match.score || match.livescore || match.t1s || 'Live';
+                const status = match.status || match.matchstatus || 'In Progress';
+                const venue = match.venue || match.ground || match.stadium || '';
+
+                html += `
+                <div style="background:white; border:1px solid #e9ecef; border-radius:12px;
+                            padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#1a1a2e; margin:0 0 12px 0;">
+                        ${{team1}} <span style="color:#E63946;">vs</span> ${{team2}}
+                    </h3>
+                    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                        <div style="background:#f8f9fa; padding:10px 16px; border-radius:8px;">
+                            <div style="font-size:12px; color:#6c757d;">Status</div>
+                            <div style="font-weight:600; color:#2A9D8F;">🔴 ${{status}}</div>
+                        </div>
+                        <div style="background:#f8f9fa; padding:10px 16px; border-radius:8px;">
+                            <div style="font-size:12px; color:#6c757d;">Score</div>
+                            <div style="font-weight:600; color:#1a1a2e;">${{score}}</div>
+                        </div>
+                        ${{venue ? `<div style="background:#f8f9fa; padding:10px 16px; border-radius:8px;">
+                            <div style="font-size:12px; color:#6c757d;">Venue</div>
+                            <div style="font-weight:600; color:#1a1a2e;">${{venue}}</div>
+                        </div>` : ''}}
+                    </div>
+                </div>`;
+            }});
+            document.getElementById('scores-output').innerHTML = html;
+
+        }} catch(err) {{
+            document.getElementById('scores-output').innerHTML = `
+                <div style="text-align:center; padding:60px; background:#f8f9fa; border-radius:12px;">
+                    <h2 style="color:#457B9D;">No Live Matches Right Now</h2>
+                    <p style="color:#6c757d; font-size:16px;">Live scores will appear here when a match is in progress.</p>
+                    <p style="color:#6c757d; font-size:14px;">IPL matches are typically held at 3:30 PM and 7:30 PM IST.</p>
+                </div>`;
+        }}
+    }}
+
+    // Auto fetch on load
+    fetchScores();
+
+    // Auto refresh every 60 seconds
+    setInterval(fetchScores, 60000);
+    </script>
+    """
+
+    components.html(live_html, height=600, scrolling=True)
 
 elif page == "Dashboard":
     st.title("IPL Match Analysis Dashboard")
